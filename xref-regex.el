@@ -93,13 +93,14 @@
   :group 'xref-regex
   :options '(ag rg))
 
-(defcustom xref-regex-ag-arguments '("--noheading" "--nocolor")
+(defcustom xref-regex-ag-arguments '("--noheading" "--nocolor" "--column")
   "Default arguments passed to ag."
   :type 'list
   :group 'xref-regex)
 
 (defcustom xref-regex-rg-arguments '("--no-heading"
 				     "--line-number"    ; not activated by default on comint
+				     "--column"
 				     "--pcre2"          ; provides regexp backtracking
 				     "--ignore-case"    ; ag is case insensitive by default
 				     "--color" "never")
@@ -180,7 +181,7 @@ which is really sub optimal."
   (xref-make (map-elt candidate 'match)
 	     (xref-make-file-location (map-elt candidate 'file)
 				      (map-elt candidate 'line)
-				      0)))
+				      (map-elt candidate 'column) )))
 
 (defun xref-regex--find-definitions (symbol)
   "Return a list of definitions for SYMBOL from an ag search."
@@ -270,6 +271,7 @@ The MATCH is one output result from the ag search."
       (setq match (concat (seq-take match 100) "...")))
     (list (cons 'file (expand-file-name (car attrs) (xref-regex--root-dir)))
 	  (cons 'line (string-to-number (cadr attrs)))
+	  (cons 'column (string-to-number (caddr attrs)))
 	  (cons 'symbol symbol)
 	  (cons 'match match))))
 
