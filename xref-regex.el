@@ -37,8 +37,8 @@
 ;; ## Dependencies
 
 ;; - Emacs above 25.1
-;; - [ag](http://geoff.greer.fm/ag/) or [rg](https://github.com/BurntSushi/ripgrep)
-;;   Customize `xref-regex-search-program` to select search tool.  `ag` is default.
+;; - [ag](http://geoff.greer.fm/ag/), [rg](https://github.com/BurntSushi/ripgrep) or GNU grep
+;;   Customize `xref-regex-search-program` to select search tool.  `grep` is default.
 
 ;; ## Usage
 
@@ -55,6 +55,7 @@
 ;; for definitions and `("ProxyJump %s")` for references.
 ;; Including `%s` is necessary.  It will be replaced by tag Xref will search for.
 ;; Thanks for `\\K` your point will land in correct column instead beginning of line.
+;; (grep does not support `--columns` so xref will always jump to 1st column)
 ;; Double backslash instead single is needed due to Lisp syntax.
 
 ;; Adding following [header](https://www.gnu.org/software/emacs/manual/html_node/emacs/Specifying-File-Variables.html) to your `.ssh/config` will let you use xref to jump to Proxy definition.
@@ -70,10 +71,12 @@
 
 ;; If your data is hard to parse with regular expressions you can create comments containing tags instead.
 
-;; You may want to customize variables `xref-regex-[ar]g-arguments`
-;; to add flag `--follow` to follow symlinks.
+;; If you want searching tool to follow symlinks, customize variables `xref-regex-[ar]g-arguments`
+;; and add flag `--follow` to follow symlinks.
+;; or in case of grep replace `--recursive` with `--dereference-recursive`
+;; in variable `xref-regex-grep-arguments`.
 
-;; Variables `xref-regex-ignored-dirs` and `xref-regex-ignored-files` allows you to ignore unwanted files.
+;; Variables `xref-regex-ignored-dirs` and `xref-regex-ignored-files` allows you to ignore unwanted files/dirs.
 
 ;;; Code:
 
@@ -87,11 +90,11 @@
   "Determine if OBJ is a list of strings."
   (and (listp obj) (seq-every-p #'stringp obj)))
 
-(defcustom xref-regex-search-program 'ag
+(defcustom xref-regex-search-program 'grep
   "The backend program used for searching."
   :type 'symbol
   :group 'xref-regex
-  :options '(ag rg))
+  :options '(ag rg grep))
 
 (defcustom xref-regex-ag-arguments '("--noheading" "--nocolor" "--column")
   "Default arguments passed to ag."
@@ -104,6 +107,17 @@
 				     "--pcre2"          ; provides regexp backtracking
 				     "--ignore-case"    ; ag is case insensitive by default
 				     "--color" "never")
+  "Default arguments passed to ripgrep."
+  :type 'list
+  :group 'xref-regex)
+
+(defcustom xref-regex-grep-arguments '("--line-number"
+				       "--binary-files=without-match"
+				       "--perl-regexp"
+				       "--ignore-case"
+				       "--color=never"
+				       "--with-filename"
+				       "--recursive")
   "Default arguments passed to ripgrep."
   :type 'list
   :group 'xref-regex)
@@ -213,8 +227,10 @@ concatenated together into one regexp, expanding occurrences of
       (let* ((search-tuple (cond ;; => (prog-name . function-to-get-args)
 			    ((eq xref-regex-search-program 'rg)
 			     '("rg" . xref-regex--search-rg-get-args))
-			    (t ;; (eq xref-regex-search-program 'ag)
-			     '("ag" . xref-regex--search-ag-get-args))))
+			    ((eq xref-regex-search-program 'ag)
+			     '("ag" . xref-regex--search-ag-get-args))
+			    ((eq xref-regex-search-program 'grep)
+			     '("grep" . xref-regex--search-grep-get-args)) ))
 	     (search-program (car search-tuple))
 	     (search-args    (remove nil ;; rm in case no search args given
 				     (funcall (cdr search-tuple) regexp))))
@@ -252,6 +268,17 @@ concatenated together into one regexp, expanding occurrences of
 		  xref-regex-ignored-files)
     ,regexp))
 
+(defun xref-regex--search-grep-get-args (regexp)
+  "Aggregate command line arguments to search for REGEXP using grep."
+  `(,@xref-regex-grep-arguments
+    ,@(seq-mapcat (lambda (dir)
+		    (list "--exclude-dir" dir))
+		  xref-regex-ignored-dirs)
+    ,@(seq-mapcat (lambda (pattern)
+		    (list "--exclude" pattern))
+		  xref-regex-ignored-files)
+    ,regexp))
+
 (defun xref-regex--root-dir ()
   "Return the root directory of the project."
   (or (ignore-errors
@@ -259,6 +286,12 @@ concatenated together into one regexp, expanding occurrences of
       (ignore-errors
 	(vc-root-dir))
       (file-name-directory buffer-file-name)))
+
+(defun xref-regex--get-column (attrs)
+  "Get column from ATTRS unless grep is used.
+grep does not support --columns"
+  (if (eq xref-regex-search-program 'grep)
+      0 (string-to-number (caddr attrs)) ))
 
 (defun xref-regex--candidate (symbol match)
   "Return a candidate alist built from SYMBOL and a raw MATCH result.
@@ -271,7 +304,7 @@ The MATCH is one output result from the ag search."
       (setq match (concat (seq-take match 100) "...")))
     (list (cons 'file (expand-file-name (car attrs) (xref-regex--root-dir)))
 	  (cons 'line (string-to-number (cadr attrs)))
-	  (cons 'column (string-to-number (caddr attrs)))
+	  (cons 'column (xref-regex--get-column attrs))
 	  (cons 'symbol symbol)
 	  (cons 'match match))))
 

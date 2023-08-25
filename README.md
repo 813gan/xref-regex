@@ -14,8 +14,8 @@ You can just download file `xref-regex.el` and install it using `M-x package-ins
 ## Dependencies
 
 - Emacs above 25.1
-- [ag](http://geoff.greer.fm/ag/) or [rg](https://github.com/BurntSushi/ripgrep)  
-  Customize `xref-regex-search-program` to select search tool.  `ag` is default.  
+- [ag](http://geoff.greer.fm/ag/), [rg](https://github.com/BurntSushi/ripgrep) or GNU grep  
+  Customize `xref-regex-search-program` to select search tool.  `grep` is default.  
 
 ## Usage
 
@@ -32,6 +32,7 @@ Example of such regex template list is `("^Host \\K%s" "^Match originalhost \\K%
 for definitions and `("ProxyJump %s")` for references.  
 Including `%s` is necessary.  It will be replaced by tag Xref will search for.  
 Thanks for `\\K` your point will land in correct column instead beginning of line.  
+(grep does not support `--columns` so xref will always jump to 1st column)  
 Double backslash instead single is needed due to Lisp syntax.  
 
 Adding following [header](https://www.gnu.org/software/emacs/manual/html_node/emacs/Specifying-File-Variables.html) to your `.ssh/config` will let you use xref to jump to Proxy definition.  
@@ -47,7 +48,9 @@ And limitations of regular expressions.
 
 If your data is hard to parse with regular expressions you can create comments containing tags instead.  
 
-You may want to customize variables `xref-regex-[ar]g-arguments`  
-to add flag `--follow` to follow symlinks.  
+If you want searching tool to follow symlinks, customize variables `xref-regex-[ar]g-arguments`  
+and add flag `--follow` to follow symlinks.  
+or in case of grep replace `--recursive` with `--dereference-recursive`  
+in variable `xref-regex-grep-arguments`.  
 
-Variables `xref-regex-ignored-dirs` and `xref-regex-ignored-files` allows you to ignore unwanted files.  
+Variables `xref-regex-ignored-dirs` and `xref-regex-ignored-files` allows you to ignore unwanted files/dirs.  
