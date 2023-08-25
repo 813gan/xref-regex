@@ -181,7 +181,7 @@ which is really sub optimal."
 	(widen)
 	(goto-char (point-min))
 	(while (re-search-forward "\\w+" nil t)
-	  (add-to-list 'words (match-string-no-properties 0)))
+	  (push (match-string-no-properties 0) words))
 	(seq-uniq words)))))
 
 (defun xref-regex--xref-find-references (symbol)
