@@ -258,7 +258,7 @@ concatenated together into one regexp, expanding occurrences of
 	(projectile-project-root))
       (ignore-errors
 	(vc-root-dir))
-      (user-error "You are not in a project")))
+      (file-name-directory buffer-file-name)))
 
 (defun xref-regex--candidate (symbol match)
   "Return a candidate alist built from SYMBOL and a raw MATCH result.
