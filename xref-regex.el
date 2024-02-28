@@ -117,7 +117,8 @@
 				       "--ignore-case"
 				       "--color=never"
 				       "--with-filename"
-				       "--recursive")
+				       "--dereference-recursive"
+				       "--no-messages")
   "Default arguments passed to ripgrep."
   :type 'list
   :group 'xref-regex)
