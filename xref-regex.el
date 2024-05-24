@@ -44,6 +44,7 @@
 
 ;; Apart from enabling xref backend with
 ;; ```
+;; (require 'xref-regex)
 ;; (add-hook 'some-random-mode-hook (lambda ()
 ;;   (add-hook 'xref-backend-functions #'xref-regex-xref-backend nil t)))
 ;; ```
