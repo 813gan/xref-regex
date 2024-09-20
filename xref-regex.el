@@ -23,6 +23,7 @@
 ;;
 ;; # xref-regex
 
+;; [![CI status](https://img.shields.io/badge/works_on_my_machine-%E2%9C%93-green)](https://img.shields.io/badge/works_on_my_machine-%E2%9C%93-green)
 ;; Simple [xref](https://www.gnu.org/software/emacs/manual/html_node/emacs/Xref.html) backend that use user-defined regular expressions.
 ;; It allows Emacs to support basic navigation in non standard files
 ;; like configuration files containing references.
@@ -56,7 +57,7 @@
 ;; for definitions and `("ProxyJump %s")` for references.
 ;; Including `%s` is necessary.  It will be replaced by tag Xref will search for.
 ;; Thanks for `\\K` your point will land in correct column instead beginning of line.
-;; (grep does not support `--columns` so xref will always jump to 1st column)
+;; (grep does not support `--columns` so this example will work correctly only with other search tools)
 ;; Double backslash instead single is needed due to Lisp syntax.
 
 ;; Adding following [header](https://www.gnu.org/software/emacs/manual/html_node/emacs/Specifying-File-Variables.html) to your `.ssh/config` will let you use xref to jump to Proxy definition.
